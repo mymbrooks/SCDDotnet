@@ -30,7 +30,7 @@ namespace Server
                                   builder =>
                                   {
                                       builder.WithOrigins("http://localhost:3000",
-                                                          "http://47.96.41.13:90")
+                                                          "http://47.96.41.13:1200")
                                                           .AllowAnyHeader()
                                                           .AllowAnyMethod();
                                   });
