@@ -18,7 +18,7 @@ namespace Server.Models.Domain
         public string accuracyclass { get; set; }
         public decimal? price { get; set; }
         public int? tracetypeid { get; set; }
-        public int? inspectioncycle { get; set; }
+        public int? tracecycle { get; set; }
         public int? supplierid { get; set; }
         public int? manufacturerid { get; set; }
         public int? departmentid { get; set; }

@@ -293,5 +293,133 @@ namespace Server.Controllers
 
             return "执行完毕";
         }
+
+        public string Instrument()
+        {
+            string docPath = @"D:\2022年仪器检定、校准计划表 - 2022.docx";
+            Document document = new Document(docPath);
+            int rowIndex = 0, cellIndex = 0;
+            string cellValue = "";
+
+            Instrument instrument;
+            InstrumentCertificate instrumentCertificate;
+            string instrumentnumber, instrumentname, specification, factorynumber, inspectplace, inspectdate, expiredate, departmentname;
+            foreach (Table table in document.GetChildNodes(NodeType.Table, true))
+            {
+                foreach (Aspose.Words.Tables.Row row in table.Rows)
+                {
+                    rowIndex = table.Rows.IndexOf(row);
+                    if (rowIndex <= 1)
+                    {
+                        continue;
+                    }
+
+                    instrumentnumber = instrumentname = specification = factorynumber = inspectplace = inspectdate = expiredate = departmentname = "";
+                    foreach (Aspose.Words.Tables.Cell cell in row.Cells)
+                    {
+                        cellIndex = row.Cells.IndexOf(cell);
+                        cellValue = FormatCell(cell.GetText());
+
+                        if (cellIndex == 0)
+                        {
+                            instrumentnumber = cellValue;
+                            continue;
+                        }
+
+                        if (cellIndex == 1)
+                        {
+                            instrumentname = cellValue;
+                            continue;
+                        }
+
+                        if (cellIndex == 2)
+                        {
+                            specification = cellValue;
+                            continue;
+                        }
+
+                        if (cellIndex == 3)
+                        {
+                            factorynumber = cellValue;
+                            continue;
+                        }
+
+                        if (cellIndex == 4)
+                        {
+                            continue;
+                        }
+
+                        if (cellIndex == 5)
+                        {
+                            inspectplace = cellValue;
+                            continue;
+                        }
+
+                        if (cellIndex == 6)
+                        {
+                            inspectdate = cellValue;
+                            continue;
+                        }
+
+                        if (cellIndex == 7)
+                        {
+                            expiredate = cellValue;
+                            continue;
+                        }
+
+                        if (cellIndex == 8)
+                        {
+                            departmentname = cellValue;
+                        }
+
+                        if (!string.IsNullOrEmpty(instrumentname))
+                        {
+                            instrument = (from i in context.Instruments
+                                          where i.name == instrumentname
+                                          select i).FirstOrDefault();
+
+                            if (instrument == null)
+                            {
+                                instrument = new Instrument();
+                                instrument.name = instrumentname;
+                                instrument.instrumentnumber = instrumentnumber;
+                                instrument.factorynumber = factorynumber;
+                                instrument.specification = specification;
+                                instrument.tracetypeid = 13;
+                                instrument.tracecycle = 12;
+                                instrument.searchkeywords = SystemUtil.GetSearchKeywords(instrumentname);
+                                instrument.stateid = 17;
+
+                                context.Instruments.Add(instrument);
+                                context.SaveChanges();
+
+                                instrument = (from i in context.Instruments
+                                              where i.name == instrumentname
+                                              select i).FirstOrDefault();
+
+                                instrumentCertificate = new InstrumentCertificate();
+                                instrumentCertificate.instrumentid = instrument.id;
+                                instrumentCertificate.certificatetypeid = 2;
+
+                                if (!string.IsNullOrEmpty(inspectdate))
+                                {
+                                    instrumentCertificate.inspectdate = DateTime.Parse(inspectdate);
+                                }
+
+                                if (!string.IsNullOrEmpty(expiredate))
+                                {
+                                    instrumentCertificate.expiredate = DateTime.Parse(expiredate);
+                                }
+
+                                context.InstrumentCertificates.Add(instrumentCertificate);
+                                context.SaveChanges();
+                            }
+                        }
+                    }
+                }
+            }
+
+            return "执行完毕";
+        }
     }
 }

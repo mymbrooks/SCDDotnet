@@ -27,5 +27,8 @@ namespace Server.Models.Domain
         public virtual DbSet<ConsumablesOutMasterModel> ConsumablesOutMasterModels { get; set; }
         public virtual DbSet<ConsumablesOutDetail> ConsumablesOutDetails { get; set; }
         public virtual DbSet<ConsumablesOutDetailModel> ConsumablesOutDetailModels { get; set; }
+        public virtual DbSet<Department> Departments { get; set; }
+        public virtual DbSet<Instrument> Instruments { get; set; }
+        public virtual DbSet<InstrumentCertificate> InstrumentCertificates { get; set; }
     }
 }
