@@ -375,7 +375,7 @@ namespace Server.Controllers
                         if (!string.IsNullOrEmpty(instrumentname))
                         {
                             instrument = (from i in context.Instruments
-                                          where i.name == instrumentname
+                                          where i.name == instrumentname && i.instrumentnumber == instrumentnumber
                                           select i).FirstOrDefault();
 
                             if (instrument == null)
@@ -394,7 +394,7 @@ namespace Server.Controllers
                                 context.SaveChanges();
 
                                 instrument = (from i in context.Instruments
-                                              where i.name == instrumentname
+                                              where i.name == instrumentname && i.instrumentnumber == instrumentnumber
                                               select i).FirstOrDefault();
 
                                 instrumentCertificate = new InstrumentCertificate();
