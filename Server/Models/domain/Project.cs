@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Server.Models.domain
+namespace Server.Models.Domain
 {
     [Table("project", Schema = "public")]
     public class Project

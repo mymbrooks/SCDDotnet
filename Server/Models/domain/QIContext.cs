@@ -10,6 +10,7 @@ namespace Server.Models.Domain
 
         }
 
+        public virtual DbSet<Company> Companys { get; set; }
         public virtual DbSet<InspectionAbilityCategory> InspectionAbilityCategorys { get; set; }
         public virtual DbSet<InspectionAbilityItem> InspectionAbilityItems { get; set; }
         public virtual DbSet<InspectionItem> InspectionItems { get; set; }
@@ -30,5 +31,7 @@ namespace Server.Models.Domain
         public virtual DbSet<Department> Departments { get; set; }
         public virtual DbSet<Instrument> Instruments { get; set; }
         public virtual DbSet<InstrumentCertificate> InstrumentCertificates { get; set; }
+        public virtual DbSet<Project> Projects { get; set; }
+        public virtual DbSet<ProjectModel> ProjectModels { get; set; }
     }
 }
