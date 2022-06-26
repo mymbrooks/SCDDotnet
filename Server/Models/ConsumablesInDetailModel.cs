@@ -13,9 +13,9 @@ namespace Server.Models
         public int? consumablesid { get; set; }
         public int? categoryid { get; set; }
         public string categoryname { get; set; }
-        public string name { get; set; }
+        public string consumablesname { get; set; }
         public string consumablesnumber { get; set; }
-        public string innumber { get; set; }
+        public string detailnumber { get; set; }
         public string batchnumber { get; set; }
         public string specification { get; set; }
         public int? baseunitid { get; set; }
@@ -31,9 +31,9 @@ namespace Server.Models
         public int? manufacturerid { get; set; }
         public string manufacturername { get; set; }
         public decimal? buyprice { get; set; }
-        public decimal? sellprice { get; set; }
         public decimal? money { get; set; }
         public string invoicenumber { get; set; }
+        public string createtime { get; set; }
         public string remark { get; set; }
     }
 }

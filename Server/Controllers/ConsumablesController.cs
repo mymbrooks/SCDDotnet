@@ -61,25 +61,20 @@ namespace Server.Controllers
                         @"
                             select distinct m.id,
 	                               m.number,
-                                   w.companyid,
-                                   co.chinesename as companyname,
 	                               m.warehouseid,
 	                               w.name as warehousename,
-	                               to_char(m.indate, 'YYYY-MM-DD') as indate,
-	                               m.createuserid,
-	                               u.realname as createusername,
-	                               to_char(m.createtime, 'YYYY-MM-DD HH24:MI:SS') as createtime,
 	                               sum(trim_scale(COALESCE(d.inamount, 0))) over (PARTITION by m.id) as inamount,
 	                               sum(trim_scale(COALESCE(d.totalamount, 0))) over (PARTITION by m.id) as totalamount,
 	                               sum(trim_scale(COALESCE(c.buyprice, 0))) over (PARTITION by m.id) as buyprice,
-	                               sum(trim_scale(COALESCE(c.sellprice, 0))) over (PARTITION by m.id) as sellprice,
 	                               trim_scale(sum(COALESCE(d.totalamount, 0) * COALESCE(c.buyprice, 0)) over (PARTITION by m.id)) as money,
+                                   m.createuserid,
+	                               u.realname as createusername,
+	                               to_char(m.createtime, 'YYYY-MM-DD HH24:MI:SS') as createtime,
 	                               m.remark
                             from consumablesinmaster as m
                             LEFT join consumablesindetail as d on m.id = d.masterid
                             LEFT join consumables as c on d.consumablesid = c.id
                             left join warehouse as w on m.warehouseid = w.id
-                            left join company as co on w.companyid = co.id
                             left join ""user"" as u on m.createuserid = u.id
                             where m.id = {0} ", masterid).FirstOrDefault();
 
@@ -93,9 +88,9 @@ namespace Server.Controllers
                                    d.consumablesid,
                                    c.categoryid,
                                    cc.name as categoryname,
-                                   c.name,
+                                   c.name as consumablesname,
                                    c.number as consumablesnumber,
-                                   d.number as innumber,
+                                   d.number as detailnumber,
                                    d.batchnumber,
                                    c.specification,
                                    c.baseunitid,
@@ -111,9 +106,9 @@ namespace Server.Controllers
                                    c.manufacturerid,
                                    ma.chinesename as manufacturername,
                                    trim_scale(COALESCE(c.buyprice, 0)) as buyprice,
-                                   trim_scale(COALESCE(c.sellprice, 0)) as sellprice,
                                    trim_scale(COALESCE(d.inamount, 0) * COALESCE(c.buyprice, 0)) as money,
                                    d.invoicenumber,
+                                   to_char(d.createtime, 'YYYY-MM-DD HH24:MI:SS') as createtime,
                                    d.remark
                             from consumablesindetail as d
                             inner join consumables as c on d.consumablesid = c.id
@@ -159,7 +154,7 @@ namespace Server.Controllers
                         {
                             if (name.Text == "标题")
                             {
-                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = master.companyname + "入库单";
+                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = "耗材入库单";
                                 continue;
                             }
 
@@ -177,7 +172,7 @@ namespace Server.Controllers
 
                             if (name.Text == "入库日期")
                             {
-                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = master.indate;
+                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = DateTime.Parse(master.createtime).ToString("yyyy-MM-dd");
                                 continue;
                             }
 
@@ -195,9 +190,9 @@ namespace Server.Controllers
                         }
 
                         // 耗材列表
-                        Aspose.Cells.Range rangeConsumablesName = workbook.Worksheets.GetRangeByName(worksheet.Name + "!耗材名称");
+                        Aspose.Cells.Range rangeName = workbook.Worksheets.GetRangeByName(worksheet.Name + "!耗材名称");
                         Aspose.Cells.Range rangeSpecification = workbook.Worksheets.GetRangeByName(worksheet.Name + "!规格型号");
-                        Aspose.Cells.Range rangeInNumber = workbook.Worksheets.GetRangeByName(worksheet.Name + "!编号");
+                        Aspose.Cells.Range rangeManufacturerName = workbook.Worksheets.GetRangeByName(worksheet.Name + "!生产厂家");
                         Aspose.Cells.Range rangeUnit = workbook.Worksheets.GetRangeByName(worksheet.Name + "!单位");
                         Aspose.Cells.Range rangeAmount = workbook.Worksheets.GetRangeByName(worksheet.Name + "!数量");
                         Aspose.Cells.Range rangePrice = workbook.Worksheets.GetRangeByName(worksheet.Name + "!单价");
@@ -220,11 +215,11 @@ namespace Server.Controllers
                         {
                             detail = listDetail[i];
 
-                            rangeConsumablesName.GetOffset(i % rowCount + 1, 0).Value = detail.name;
+                            rangeName.GetOffset(i % rowCount + 1, 0).Value = detail.consumablesname;
                             rangeSpecification.GetOffset(i % rowCount + 1, 0).Value = detail.specification;
-                            rangeInNumber.GetOffset(i % rowCount + 1, 0).Value = detail.innumber;
+                            rangeManufacturerName.GetOffset(i % rowCount + 1, 0).Value = detail.manufacturername;
                             rangeUnit.GetOffset(i % rowCount + 1, 0).Value = detail.inunitname;
-                            rangeAmount.GetOffset(i % rowCount + 1, 0).Value = detail.inamount;
+                            rangeAmount.GetOffset(i % rowCount + 1, 0).Value = detail.totalamount;
                             rangePrice.GetOffset(i % rowCount + 1, 0).Value = detail.buyprice;
                             rangeMoney.GetOffset(i % rowCount + 1, 0).Value = detail.money;
                         }
@@ -235,13 +230,11 @@ namespace Server.Controllers
                         rangeMoney.GetOffset(13, 0).GetCellOrNull(0, 0).Formula = "=SUM(J5:J16)";
 
                         // 总合计
-                        rangeAmount.GetOffset(14, 0).Value = listDetail.Sum(d => d.inamount);
+                        rangeAmount.GetOffset(14, 0).Value = listDetail.Sum(d => d.totalamount);
                         rangePrice.GetOffset(14, 0).Value = listDetail.Sum(d => d.buyprice);
                         rangeMoney.GetOffset(14, 0).Value = listDetail.Sum(d => d.money);
 
                         workbook.CalculateFormula();
-
-                        worksheet.PageSetup.CustomPaperSize(24.1 * 0.393700787402, 14 * 0.393700787402);
 
                         workbook.Save(Path.Combine(saveDir, (page + 1) + ".pdf"), SaveFormat.Pdf);
                     }
@@ -317,29 +310,23 @@ namespace Server.Controllers
                         @"
                             select distinct m.id,
                                             m.number,
-                                            w.companyid,
-                                            co.chinesename as companyname,
                                             m.warehouseid,
                                             w.name as warehousename,
-                                            m.departmentid,
-                                            d.name as departmentname,
-                                            to_char(m.outdate, 'YYYY-MM-DD') as outdate,
-                                            m.createuserid,
-                                            u.realname as createusername,
-                                            to_char(m.createtime, 'YYYY-MM-DD HH24:MI:SS') as createtime,
                                             sum(trim_scale(COALESCE(cd.outamount, 0))) over (PARTITION by m.id) as outamount,
                                             sum(trim_scale(COALESCE(cd.totalamount, 0))) over (PARTITION by m.id) as totalamount,
                                             sum(trim_scale(COALESCE(c.buyprice, 0))) over (PARTITION by m.id) as buyprice,
-                                            sum(trim_scale(COALESCE(c.sellprice, 0))) over (PARTITION by m.id) as sellprice,
                                             trim_scale(sum(COALESCE(cd.totalamount, 0) * COALESCE(c.buyprice, 0)) over (PARTITION by m.id)) as money,
+                                            m.createuserid,
+                                            u.realname as createusername,
+                                            m.receiveuserid,
+                                            receiveuser.realname as receiveusername,
+                                            to_char(m.createtime, 'YYYY-MM-DD HH24:MI:SS') as createtime,
                                             m.remark
                             from consumablesoutmaster as m
                             LEFT join consumablesoutdetail as cd on m.id = cd.masterid
                             left join consumablesstock as cs on cd.stockid = cs.id
                             LEFT join consumables as c on cs.consumablesid = c.id
                             left join warehouse as w on m.warehouseid = w.id
-                            left join company as co on w.companyid = co.id
-                            left join department as d on m.departmentid = d.id
                             left join ""user"" as u on m.createuserid = u.id
                             where m.id = {0} ", masterid).FirstOrDefault();
 
@@ -352,8 +339,9 @@ namespace Server.Controllers
                                     d.stockid,
                                     c.categoryid,
                                     cc.name as categoryname,
-                                    c.name,
-		                            c.number,
+                                    c.name as consumablesname,
+		                            c.number as consumablesnumber,
+                                    d.number as detailnumber,
 		                            cs.batchnumber,
 		                            c.specification,
 		                            c.baseunitid,
@@ -367,12 +355,12 @@ namespace Server.Controllers
 		                            c.manufacturerid,
 		                            ma.chinesename as manufacturername,
 		                            trim_scale(c.buyprice) as buyprice,
-		                            trim_scale(c.sellprice) as sellprice,
 		                            trim_scale(COALESCE(d.outamount, 0) * COALESCE(c.buyprice, 0)) as money,
 		                            trim_scale(cs.stockamount) as stockamount,
 		                            trim_scale(cs.totalamount) as stocktotalamount,
 		                            trim_scale(d.outamount) as outamount,
 		                            trim_scale(d.totalamount) as totalamount,
+                                    to_char(d.createtime, 'YYYY-MM-DD HH24:MI:SS') as createtime,
 		                            d.remark
                             from consumablesoutdetail as d
                             inner join consumablesstock as cs on d.stockid = cs.id
@@ -418,7 +406,7 @@ namespace Server.Controllers
                         {
                             if (name.Text == "标题")
                             {
-                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = master.companyname + "出库单";
+                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = "耗材出库单";
                                 continue;
                             }
 
@@ -434,9 +422,9 @@ namespace Server.Controllers
                                 continue;
                             }
 
-                            if (name.Text == "出库部门")
+                            if (name.Text == "出库日期")
                             {
-                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = master.departmentname;
+                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = DateTime.Parse(master.createtime).ToString("yyyy-MM-dd");
                                 continue;
                             }
 
@@ -451,18 +439,12 @@ namespace Server.Controllers
                                 workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = master.createtime;
                                 continue;
                             }
-
-                            if (name.Text == "出库日期")
-                            {
-                                workbook.Worksheets.GetRangeByName(worksheet.Name + "!" + name.Text).Value = master.outdate;
-                                continue;
-                            }
                         }
 
                         // 耗材列表
-                        Aspose.Cells.Range rangeConsumablesName = workbook.Worksheets.GetRangeByName(worksheet.Name + "!耗材名称");
+                        Aspose.Cells.Range rangeName = workbook.Worksheets.GetRangeByName(worksheet.Name + "!耗材名称");
                         Aspose.Cells.Range rangeSpecification = workbook.Worksheets.GetRangeByName(worksheet.Name + "!规格型号");
-                        Aspose.Cells.Range rangeNumber = workbook.Worksheets.GetRangeByName(worksheet.Name + "!编号");
+                        Aspose.Cells.Range rangeManufacturerName = workbook.Worksheets.GetRangeByName(worksheet.Name + "!生产厂家");
                         Aspose.Cells.Range rangeUnit = workbook.Worksheets.GetRangeByName(worksheet.Name + "!单位");
                         Aspose.Cells.Range rangeAmount = workbook.Worksheets.GetRangeByName(worksheet.Name + "!数量");
                         Aspose.Cells.Range rangePrice = workbook.Worksheets.GetRangeByName(worksheet.Name + "!单价");
@@ -485,11 +467,11 @@ namespace Server.Controllers
                         {
                             detail = listDetail[i];
 
-                            rangeConsumablesName.GetOffset(i % rowCount + 1, 0).Value = detail.name;
+                            rangeName.GetOffset(i % rowCount + 1, 0).Value = detail.consumablesname;
                             rangeSpecification.GetOffset(i % rowCount + 1, 0).Value = detail.specification;
-                            rangeNumber.GetOffset(i % rowCount + 1, 0).Value = detail.number;
+                            rangeManufacturerName.GetOffset(i % rowCount + 1, 0).Value = detail.manufacturername;
                             rangeUnit.GetOffset(i % rowCount + 1, 0).Value = detail.inunitname;
-                            rangeAmount.GetOffset(i % rowCount + 1, 0).Value = detail.outamount;
+                            rangeAmount.GetOffset(i % rowCount + 1, 0).Value = detail.totalamount;
                             rangePrice.GetOffset(i % rowCount + 1, 0).Value = detail.buyprice;
                             rangeMoney.GetOffset(i % rowCount + 1, 0).Value = detail.money;
                         }
@@ -499,9 +481,12 @@ namespace Server.Controllers
                         rangePrice.GetOffset(13, 0).GetCellOrNull(0, 0).Formula = "=SUM(I5:I16)";
                         rangeMoney.GetOffset(13, 0).GetCellOrNull(0, 0).Formula = "=SUM(J5:J16)";
 
-                        workbook.CalculateFormula();
+                        // 总合计
+                        rangeAmount.GetOffset(14, 0).Value = listDetail.Sum(d => d.totalamount);
+                        rangePrice.GetOffset(14, 0).Value = listDetail.Sum(d => d.buyprice);
+                        rangeMoney.GetOffset(14, 0).Value = listDetail.Sum(d => d.money);
 
-                        worksheet.PageSetup.CustomPaperSize(24.1 * 0.393700787402, 14 * 0.393700787402);
+                        workbook.CalculateFormula();
 
                         workbook.Save(Path.Combine(saveDir, (page + 1) + ".pdf"), SaveFormat.Pdf);
                     }

@@ -16,6 +16,7 @@ namespace Server.Models.Domain
         public DateTime? expiredate { get; set; }
         public decimal? stockamount { get; set; }
         public decimal? totalamount { get; set; }
+        public decimal? warningamount { get; set; }
         public string remark { get; set; }
     }
 }

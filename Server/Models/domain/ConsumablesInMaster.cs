@@ -12,7 +12,6 @@ namespace Server.Models.Domain
         public long id { get; set; }
         public string number { get; set; }
         public int? warehouseid { get; set; }
-        public DateTime? indate { get; set; }
         public int? createuserid { get; set; }
         public DateTime? createtime { get; set; }
         public string remark { get; set; }

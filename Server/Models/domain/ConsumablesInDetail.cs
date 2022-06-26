@@ -12,11 +12,13 @@ namespace Server.Models.Domain
         public long id { get; set; }
         public long masterid { get; set; }
         public int? consumablesid { get; set; }
+        public string number { get; set; }
         public string batchnumber { get; set; }
         public decimal? inamount { get; set; }
         public decimal? totalamount { get; set; }
         public DateTime? expiredate { get; set; }
         public string invoicenumber { get; set; }
+        public DateTime? createtime { get; set; }
         public string remark { get; set; }
     }
 }
