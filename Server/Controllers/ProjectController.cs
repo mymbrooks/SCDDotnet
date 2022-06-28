@@ -33,7 +33,7 @@ namespace Server.Controllers
             this.webHostEnvironment = webHostEnvironment;
         }
 
-        public string PrintEntrustOrder(long projectid)
+        public string PrintSolution(long projectid)
         {
             ResultModel<string> resultModel = new ResultModel<string>();
 
