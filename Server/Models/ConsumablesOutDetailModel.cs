@@ -8,8 +8,8 @@ namespace Server.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long id { get; set; }
-        public long masterid { get; set; }
+        public int? id { get; set; }
+        public int? masterid { get; set; }
         public int? stockid { get; set; }
         public int? categoryid { get; set; }
         public string categoryname { get; set; }

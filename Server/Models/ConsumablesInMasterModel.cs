@@ -7,7 +7,7 @@ namespace Server.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long id { get; set; }
+        public int? id { get; set; }
         public string number { get; set; }
         public int? warehouseid { get; set; }
         public string warehousename { get; set; }

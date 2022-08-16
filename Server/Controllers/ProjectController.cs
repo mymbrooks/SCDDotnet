@@ -1,5 +1,6 @@
 ﻿using Aspose.Words;
 using Aspose.Words.Properties;
+using Aspose.Words.Tables;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -252,6 +253,119 @@ namespace Server.Controllers
                 if (dic.ContainsKey("创建人"))
                 {
                     document.Range.Replace(dic["创建人"], projectModel.createusername ?? "");
+                }
+
+                // 检测方案
+                List<SolutionModel> listSolutionModel = context.SolutionModels.FromSqlRaw(
+                    @"select   ti.id,
+			                   t.name as taskname,
+                               ic.name as categoryname,
+                               CASE WHEN COALESCE(ti.issubcontract, false)
+                                  THEN ti.subcontractitem
+                                  ELSE i.name
+                               END AS itemname,
+			                         CASE WHEN ti.cycletypeid is null
+                                  THEN t.rate || '批/次，1次'
+                                  ELSE t.rate || '批/次，1次/' || cycletype.value
+                               END AS rates,
+                               CASE WHEN ids.min is null and ids.max is not null
+                                      THEN cast(trim_scale(ids.max) as VARCHAR)
+                                    WHEN ids.min is not null and ids.max is null
+                                      THEN cast(trim_scale(ids.min) as VARCHAR)
+                                    WHEN ids.min is not null and ids.max is not null
+                                      THEN trim_scale(ids.min) || ' - ' || trim_scale(ids.max)
+                                    else ''
+                               END as determinationstandardlimit,
+			                         determinationstandard.number as determinationstandardnumber,
+			                         samplingstandard.number as samplingstandardnumber
+                        from taskitem as ti
+                        inner join task as t on ti.taskid = t.id
+                        inner join inspectionabilityitem as iai on ti.abilityitemid = iai.id
+                        inner join inspectionabilitycategory as ic on iai.categoryid = ic.id
+                        left join inspectionitem as i on iai.itemid = i.id
+                        left join inspectionitemsamplingstandard as iss on ti.samplingstandardid = iss.id
+                        left join standard as samplingstandard on iss.standardid = samplingstandard.id
+                        left join inspectionitemdeterminationstandard as ids on ti.determinationstandardid = ids.id
+                        left join standard as determinationstandard on ids.standardid = determinationstandard.id
+                        left join (select dd.id, dd.value from datadictionary as dd where dd.key = '周期类型' order by dd.index) as cycletype on ti.cycletypeid = cycletype.id
+                        where t.projectid = {0}
+                        order by t.index, ti.index", new object[] { projectid }).ToList();
+
+                Table table;
+                Row row;
+                Cell cell;
+                Paragraph paragraph;
+                Run run;
+                foreach (Node node in document.GetChildNodes(NodeType.Table, true))
+                {
+                    table = (Table)node;
+
+                    if (table.Title == "检测方案")
+                    {
+                        foreach (SolutionModel solutionModel in listSolutionModel)
+                        {
+                            row = new Row(document);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.taskname ?? "");
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document);
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            documentBuilder.MoveTo(run);
+                            documentBuilder.InsertHtml(solutionModel.itemname ?? "");
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.rates ?? "");
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.determinationstandardlimit ?? "");
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.determinationstandardnumber ?? "");
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.samplingstandardnumber ?? "");
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            table.InsertAfter(row, table.Rows[listSolutionModel.IndexOf(solutionModel)]);
+                        }
+                    }
                 }
 
                 CustomDocumentProperties props = document.CustomDocumentProperties;

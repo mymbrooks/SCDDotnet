@@ -9,8 +9,8 @@ namespace Server.Models.Domain
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long id { get; set; }
-        public long masterid { get; set; }
+        public int? id { get; set; }
+        public int? masterid { get; set; }
         public int? consumablesid { get; set; }
         public string number { get; set; }
         public string batchnumber { get; set; }
