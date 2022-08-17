@@ -34,6 +34,21 @@ namespace Server.Controllers
             this.webHostEnvironment = webHostEnvironment;
         }
 
+        private static void HorizontallyMergeCells(Cell c1, Cell c2)
+        {
+            c1.CellFormat.HorizontalMerge = CellMerge.First;
+            c1.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+
+            //Move all content from next cell to previous
+            foreach (Node child in c2.ChildNodes)
+            {
+                c1.AppendChild(child);
+            }
+
+            c2.CellFormat.HorizontalMerge = CellMerge.Previous;
+            c2.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+        }
+
         public string PrintSolution(long projectid)
         {
             ResultModel<string> resultModel = new ResultModel<string>();
@@ -145,14 +160,29 @@ namespace Server.Controllers
                     }
                 }
 
+                if (dic.ContainsKey("项目编号"))
+                {
+                    document.Range.Replace(dic["项目编号"], projectModel.number ?? "");
+                }
+
                 if (dic.ContainsKey("项目名称"))
                 {
                     document.Range.Replace(dic["项目名称"], projectModel.name ?? "");
                 }
 
-                if (dic.ContainsKey("受检客户名称"))
+                if (dic.ContainsKey("项目类型"))
                 {
-                    document.Range.Replace(dic["受检客户名称"], projectModel.clientcustomername ?? "");
+                    document.Range.Replace(dic["项目类型"], projectModel.projecttypename ?? "");
+                }
+
+                if (dic.ContainsKey("委托单位名称"))
+                {
+                    document.Range.Replace(dic["委托单位名称"], projectModel.entrustcustomername ?? "");
+                }
+
+                if (dic.ContainsKey("受检单位名称"))
+                {
+                    document.Range.Replace(dic["受检单位名称"], projectModel.clientcustomername ?? "");
                 }
 
                 if (dic.ContainsKey("公司名称"))
@@ -230,14 +260,24 @@ namespace Server.Controllers
                     document.Range.Replace(dic["报告份数"], projectModel.reportcount == null ? "0" : projectModel.reportcount.ToString());
                 }
 
-                if (dic.ContainsKey("受检客户地址"))
+                if (dic.ContainsKey("委托单位地址"))
                 {
-                    document.Range.Replace(dic["受检客户地址"], projectModel.clientcustomeraddress ?? "");
+                    document.Range.Replace(dic["委托单位地址"], projectModel.entrustcustomeraddress ?? "");
                 }
 
-                if (dic.ContainsKey("受检客户电话"))
+                if (dic.ContainsKey("受检单位地址"))
                 {
-                    document.Range.Replace(dic["受检客户电话"], projectModel.clientcustomertelephone ?? "");
+                    document.Range.Replace(dic["受检单位地址"], projectModel.clientcustomeraddress ?? "");
+                }
+
+                if (dic.ContainsKey("委托单位电话"))
+                {
+                    document.Range.Replace(dic["委托单位电话"], projectModel.entrustcustomertelephone ?? "");
+                }
+
+                if (dic.ContainsKey("受检单位电话"))
+                {
+                    document.Range.Replace(dic["受检单位电话"], projectModel.clientcustomertelephone ?? "");
                 }
 
                 if (dic.ContainsKey("公司地址"))
@@ -250,6 +290,11 @@ namespace Server.Controllers
                     document.Range.Replace(dic["公司电话"], company.telephone ?? "");
                 }
 
+                if (dic.ContainsKey("委托单位联系人"))
+                {
+                    document.Range.Replace(dic["委托单位联系人"], projectModel.entrustcustomercontact ?? "");
+                }
+
                 if (dic.ContainsKey("创建人"))
                 {
                     document.Range.Replace(dic["创建人"], projectModel.createusername ?? "");
@@ -258,13 +303,16 @@ namespace Server.Controllers
                 // 检测方案
                 List<SolutionModel> listSolutionModel = context.SolutionModels.FromSqlRaw(
                     @"select   ti.id,
+                               t.number as tasknumber,
 			                   t.name as taskname,
                                ic.name as categoryname,
                                CASE WHEN COALESCE(ti.issubcontract, false)
                                   THEN ti.subcontractitem
                                   ELSE i.name
                                END AS itemname,
-			                         CASE WHEN ti.cycletypeid is null
+                               t.rate,
+			                   t.day,
+			                   CASE WHEN ti.cycletypeid is null
                                   THEN t.rate || '批/次，1次'
                                   ELSE t.rate || '批/次，1次/' || cycletype.value
                                END AS rates,
@@ -276,8 +324,12 @@ namespace Server.Controllers
                                       THEN trim_scale(ids.min) || ' - ' || trim_scale(ids.max)
                                     else ''
                                END as determinationstandardlimit,
-			                         determinationstandard.number as determinationstandardnumber,
-			                         samplingstandard.number as samplingstandardnumber
+			                   determinationstandard.number as determinationstandardnumber,
+			                   samplingstandard.number as samplingstandardnumber,
+                               trim_scale(iss.fee) as samplingstandardfee,
+                               trim_scale(iis.fee) as inspectionstandardfee,
+			                   trim_scale((iss.fee + iis.fee) * t.rate * t.day) as singletotalfee,
+			                   trim_scale(sum((iss.fee + iis.fee) * t.rate * t.day) over (PARTITION BY t.projectid)) as totalfee
                         from taskitem as ti
                         inner join task as t on ti.taskid = t.id
                         inner join inspectionabilityitem as iai on ti.abilityitemid = iai.id
@@ -285,6 +337,7 @@ namespace Server.Controllers
                         left join inspectionitem as i on iai.itemid = i.id
                         left join inspectionitemsamplingstandard as iss on ti.samplingstandardid = iss.id
                         left join standard as samplingstandard on iss.standardid = samplingstandard.id
+                        left join inspectioniteminspectionstandard as iis on ti.inspectionstandardid = iis.id
                         left join inspectionitemdeterminationstandard as ids on ti.determinationstandardid = ids.id
                         left join standard as determinationstandard on ids.standardid = determinationstandard.id
                         left join (select dd.id, dd.value from datadictionary as dd where dd.key = '周期类型' order by dd.index) as cycletype on ti.cycletypeid = cycletype.id
@@ -296,6 +349,7 @@ namespace Server.Controllers
                 Cell cell;
                 Paragraph paragraph;
                 Run run;
+                List<Cell> listCell;
                 foreach (Node node in document.GetChildNodes(NodeType.Table, true))
                 {
                     table = (Table)node;
@@ -305,6 +359,15 @@ namespace Server.Controllers
                         foreach (SolutionModel solutionModel in listSolutionModel)
                         {
                             row = new Row(document);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.tasknumber ?? "/");
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
 
                             cell = new Cell(document);
                             paragraph = new Paragraph(document);
@@ -364,6 +427,101 @@ namespace Server.Controllers
                             row.Cells.Add(cell);
 
                             table.InsertAfter(row, table.Rows[listSolutionModel.IndexOf(solutionModel)]);
+                        }
+                    }
+
+                    if (table.Title == "报价单")
+                    {
+                        foreach (SolutionModel solutionModel in listSolutionModel)
+                        {
+                            row = new Row(document);
+                            listCell = new List<Cell>();
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.categoryname ?? "");
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document);
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            documentBuilder.MoveTo(run);
+                            documentBuilder.InsertHtml(solutionModel.itemname ?? "");
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.samplingstandardfee == null ? "" : solutionModel.samplingstandardfee.ToString());
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.inspectionstandardfee == null ? "" : solutionModel.inspectionstandardfee.ToString());
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.rate == null ? "" : solutionModel.rate.ToString());
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.day == null ? "" : solutionModel.day.ToString());
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.singletotalfee == null ? "" : solutionModel.singletotalfee.ToString());
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+
+                            if (listSolutionModel.IndexOf(solutionModel) == listSolutionModel.Count - 1)
+                            {
+                                run = new Run(document, solutionModel.totalfee == null ? "" : solutionModel.totalfee.ToString());
+                            }
+                            else
+                            {
+                                run = new Run(document);
+                            }
+
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            table.InsertAfter(row, table.Rows[listSolutionModel.IndexOf(solutionModel) + 10]);
                         }
                     }
                 }
