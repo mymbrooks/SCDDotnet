@@ -34,21 +34,6 @@ namespace Server.Controllers
             this.webHostEnvironment = webHostEnvironment;
         }
 
-        private static void HorizontallyMergeCells(Cell c1, Cell c2)
-        {
-            c1.CellFormat.HorizontalMerge = CellMerge.First;
-            c1.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
-
-            //Move all content from next cell to previous
-            foreach (Node child in c2.ChildNodes)
-            {
-                c1.AppendChild(child);
-            }
-
-            c2.CellFormat.HorizontalMerge = CellMerge.Previous;
-            c2.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
-        }
-
         public string PrintSolution(long projectid)
         {
             ResultModel<string> resultModel = new ResultModel<string>();
@@ -310,6 +295,7 @@ namespace Server.Controllers
                                   THEN ti.subcontractitem
                                   ELSE i.name
                                END AS itemname,
+                               t.point,
                                t.rate,
 			                   t.day,
 			                   CASE WHEN ti.cycletypeid is null
@@ -328,8 +314,8 @@ namespace Server.Controllers
 			                   samplingstandard.number as samplingstandardnumber,
                                trim_scale(iss.fee) as samplingstandardfee,
                                trim_scale(iis.fee) as inspectionstandardfee,
-			                   trim_scale((iss.fee + iis.fee) * t.rate * t.day) as singletotalfee,
-			                   trim_scale(sum((iss.fee + iis.fee) * t.rate * t.day) over (PARTITION BY t.projectid)) as totalfee
+			                   trim_scale((iss.fee + iis.fee) * t.point * t.rate * t.day) as singletotalfee,
+			                   trim_scale(sum((iss.fee + iis.fee) * t.point * t.rate * t.day) over (PARTITION BY t.projectid)) as totalfee
                         from taskitem as ti
                         inner join task as t on ti.taskid = t.id
                         inner join inspectionabilityitem as iai on ti.abilityitemid = iai.id
@@ -470,6 +456,15 @@ namespace Server.Controllers
                             cell = new Cell(document);
                             paragraph = new Paragraph(document);
                             run = new Run(document, solutionModel.inspectionstandardfee == null ? "" : solutionModel.inspectionstandardfee.ToString());
+                            paragraph.Runs.Add(run);
+                            paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
+                            cell.Paragraphs.Add(paragraph);
+                            cell.CellFormat.VerticalAlignment = CellVerticalAlignment.Center;
+                            row.Cells.Add(cell);
+
+                            cell = new Cell(document);
+                            paragraph = new Paragraph(document);
+                            run = new Run(document, solutionModel.point == null ? "" : solutionModel.point.ToString());
                             paragraph.Runs.Add(run);
                             paragraph.ParagraphFormat.Alignment = ParagraphAlignment.Center;
                             cell.Paragraphs.Add(paragraph);

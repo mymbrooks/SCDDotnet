@@ -12,6 +12,7 @@ namespace Server.Models
         public string taskname { get; set; }
         public string categoryname { get; set; }
         public string itemname { get; set; }
+        public int? point { get; set; }
         public int? rate { get; set; }
         public int? day { get; set; }
         public string rates { get; set; }

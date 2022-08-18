@@ -34,5 +34,6 @@ namespace Server.Models.Domain
         public virtual DbSet<Project> Projects { get; set; }
         public virtual DbSet<ProjectModel> ProjectModels { get; set; }
         public virtual DbSet<SolutionModel> SolutionModels { get; set; }
+        public virtual DbSet<Report> Reports { get; set; }
     }
 }
