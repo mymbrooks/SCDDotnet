@@ -63,7 +63,6 @@ namespace Server.Controllers
             InspectionItem item = null;
             InspectionAbilityItem abilityItem = null;
             InspectionItemInspectionStandard itemStandard = null;
-            InspectionAbilityItemInspectionStandard abilityStandard = null;
             InspectionStandardCredentials credentials = null;
             Standard standard = null;
             foreach (Table table in document.GetChildNodes(NodeType.Table, true))
@@ -263,24 +262,6 @@ namespace Server.Controllers
                                 credentials.credentialsid = 2;
 
                                 context.InspectionStandardCredentialss.Add(credentials);
-                                context.SaveChanges();
-                            }
-                        }
-
-                        if (abilityItem != null && itemStandard != null)
-                        {
-                            // 检测能力检测标准
-                            abilityStandard = (from ais in context.InspectionAbilityItemInspectionStandards
-                                               where ais.abilityitemid == abilityItem.id && ais.inspectionstandardid == itemStandard.id
-                                               select ais).FirstOrDefault();
-
-                            if (abilityStandard == null)
-                            {
-                                abilityStandard = new InspectionAbilityItemInspectionStandard();
-                                abilityStandard.abilityitemid = abilityItem.id;
-                                abilityStandard.inspectionstandardid = itemStandard.id;
-
-                                context.InspectionAbilityItemInspectionStandards.Add(abilityStandard);
                                 context.SaveChanges();
                             }
                         }

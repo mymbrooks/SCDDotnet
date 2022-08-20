@@ -13,6 +13,7 @@ namespace Server.Models.Domain
         public int? index { get; set; }
         public int? standardid { get; set; }
         public string method { get; set; }
+        public string range { get; set; }
         public int? detectionminlimitoperatorid { get; set; }
         public decimal? detectionminlimit { get; set; }
         public int? detectionmaxlimitoperatorid { get; set; }
@@ -22,7 +23,12 @@ namespace Server.Models.Domain
         public int? quantificationmaxlimitoperatorid { get; set; }
         public decimal? quantificationmaxlimit { get; set; }
         public int? unitid { get; set; }
-        public decimal? fee { get; set; }
+        public bool? ispercentage { get; set; }
+        public decimal? pretreatmentfee { get; set; }
+        public decimal? inspectionfee { get; set; }
+        public decimal? relativedeviationlimit { get; set; }
+        public decimal? recoveryrateminlimit { get; set; }
+        public decimal? recoveryratemaxlimit { get; set; }
         public string remark { get; set; }
     }
 }

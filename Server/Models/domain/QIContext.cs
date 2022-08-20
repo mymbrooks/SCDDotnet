@@ -14,7 +14,6 @@ namespace Server.Models.Domain
         public virtual DbSet<InspectionAbilityCategory> InspectionAbilityCategorys { get; set; }
         public virtual DbSet<InspectionAbilityItem> InspectionAbilityItems { get; set; }
         public virtual DbSet<InspectionItem> InspectionItems { get; set; }
-        public virtual DbSet<InspectionAbilityItemInspectionStandard> InspectionAbilityItemInspectionStandards { get; set; }
         public virtual DbSet<InspectionItemInspectionStandard> InspectionItemInspectionStandards { get; set; }
         public virtual DbSet<InspectionItemDeterminationStandard> InspectionItemDeterminationStandards { get; set; }
         public virtual DbSet<InspectionItemInspectionStandardInstrument> InspectionItemInspectionStandardInstruments { get; set; }

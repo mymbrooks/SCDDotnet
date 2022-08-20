@@ -148,8 +148,7 @@ namespace Server.Controllers
                 collector = new LayoutCollector(document);
                 int pageCount = document.PageCount;
                 List<Image> listImage = SystemUtil.SplitImage(sealPath, pageCount);
-                string saveDir = Path.Combine(configuration["FileServerAbsolutePath"], "Report",
-                    report.id.ToString());
+                string saveDir = Path.Combine(configuration["FileServerAbsolutePath"], "Report", report.id.ToString());
 
                 if (Directory.Exists(saveDir))
                 {
@@ -161,18 +160,19 @@ namespace Server.Controllers
                 string crossSealPath;
                 Aspose.Words.Drawing.Shape shapeCrossSeal;
                 int pageIndex = 1;
+                int width = 20, height = 120;
+                Image image;
                 foreach (Paragraph paragraph in paragraphs)
                 {
-                    if (collector.GetStartPageIndex(paragraph) == pageIndex &&
-                        paragraph.GetAncestor(NodeType.GroupShape) == null)
+                    if (collector.GetStartPageIndex(paragraph) == pageIndex && paragraph.GetAncestor(NodeType.GroupShape) == null)
                     {
                         crossSealPath = saveDir + "/" + pageIndex + ".png";
-                        listImage[pageIndex - 1].Save(crossSealPath);
+                        image = SystemUtil.ResizeImage(listImage[pageIndex - 1], width, height);
+                        image.Save(crossSealPath);
 
                         anchorPara = paragraph;
 
-                        shapeCrossSeal =
-                            new Aspose.Words.Drawing.Shape(document, Aspose.Words.Drawing.ShapeType.Image);
+                        shapeCrossSeal = new Aspose.Words.Drawing.Shape(document, Aspose.Words.Drawing.ShapeType.Image);
                         shapeCrossSeal.Left = 500;
                         shapeCrossSeal.Top = 50;
 
