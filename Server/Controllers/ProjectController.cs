@@ -312,10 +312,10 @@ namespace Server.Controllers
                                END as determinationstandardlimit,
 			                   determinationstandard.number as determinationstandardnumber,
 			                   samplingstandard.number as samplingstandardnumber,
-                               trim_scale(iss.fee) as samplingstandardfee,
-                               trim_scale(iis.pretreatmentfee + iis.inspectionfee) as inspectionstandardfee,
-			                   trim_scale((iss.fee + iis.pretreatmentfee + iis.inspectionfee) * t.point * t.rate * t.day) as singletotalfee,
-			                   trim_scale(sum((iss.fee + iis.pretreatmentfee + iis.inspectionfee) * t.point * t.rate * t.day) over (PARTITION BY t.projectid)) as totalfee
+                               trim_scale(COALESCE(iss.fee, 0)) as samplingstandardfee,
+                               trim_scale(COALESCE(iis.pretreatmentfee, 0) + COALESCE(iis.inspectionfee, 0)) as inspectionstandardfee,
+			                   trim_scale((COALESCE(iss.fee, 0) + COALESCE(iis.pretreatmentfee, 0) + COALESCE(iis.inspectionfee, 0)) * t.point * t.rate * t.day) as singletotalfee,
+			                   trim_scale(sum((COALESCE(iss.fee, 0) + COALESCE(iis.pretreatmentfee, 0) + COALESCE(iis.inspectionfee, 0)) * t.point * t.rate * t.day) over (PARTITION BY t.projectid)) as totalfee
                         from taskitem as ti
                         inner join task as t on ti.taskid = t.id
                         inner join inspectionabilityitem as iai on ti.abilityitemid = iai.id

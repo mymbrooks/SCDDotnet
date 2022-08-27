@@ -49,8 +49,8 @@ namespace Server.Controllers
                     return JsonConvert.SerializeObject(resultModel);
                 }
 
-                string compileSignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/suzhiwei.png");
-                string verifySignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/zhangzeliang.png");
+                string compileSignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/zhangzeliang.png");
+                string verifySignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/suzhiwei.png");
                 string signSignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/suntao.png");
 
                 DateTime dateTime = DateTime.Now;
@@ -90,6 +90,8 @@ namespace Server.Controllers
             }
             catch (Exception e)
             {
+                logger.LogError(e.StackTrace);
+
                 resultModel.success = false;
                 resultModel.info = e.Message;
                 return JsonConvert.SerializeObject(resultModel);
@@ -113,8 +115,8 @@ namespace Server.Controllers
                     return JsonConvert.SerializeObject(resultModel);
                 }
 
-                string sealPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/检测专用章.png");
-                if (!System.IO.File.Exists(sealPath))
+                string sealLargePath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/检测专用章.png");
+                if (!System.IO.File.Exists(sealLargePath))
                 {
                     resultModel.success = false;
                     resultModel.info = "检验专用章图片不存在，请联系管理员";
@@ -139,15 +141,16 @@ namespace Server.Controllers
                     if (shapeSeal.AlternativeText == "签章")
                     {
                         // 添加普通章
-                        shapeSeal.ImageData.SetImage(sealPath);
+                        shapeSeal.ImageData.SetImage(sealLargePath);
                     }
                 }
 
                 // 添加骑缝章
+                string sealSmallPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/检测专用章small.png");
                 paragraphs = document.GetChildNodes(NodeType.Paragraph, true);
                 collector = new LayoutCollector(document);
                 int pageCount = document.PageCount;
-                List<Image> listImage = SystemUtil.SplitImage(sealPath, pageCount);
+                List<Image> listImage = SystemUtil.SplitImage(sealSmallPath, pageCount);
                 string saveDir = Path.Combine(configuration["FileServerAbsolutePath"], "Report", report.id.ToString());
 
                 if (Directory.Exists(saveDir))
@@ -160,14 +163,13 @@ namespace Server.Controllers
                 string crossSealPath;
                 Aspose.Words.Drawing.Shape shapeCrossSeal;
                 int pageIndex = 1;
-                int width = 20, height = 120;
                 Image image;
                 foreach (Paragraph paragraph in paragraphs)
                 {
                     if (collector.GetStartPageIndex(paragraph) == pageIndex && paragraph.GetAncestor(NodeType.GroupShape) == null)
                     {
                         crossSealPath = Path.Combine(saveDir, pageIndex + ".png");
-                        image = SystemUtil.ResizeImage(listImage[pageIndex - 1], width, height);
+                        image = listImage[pageIndex - 1];
                         image.Save(crossSealPath);
 
                         anchorPara = paragraph;
@@ -198,6 +200,8 @@ namespace Server.Controllers
             }
             catch (Exception e)
             {
+                logger.LogError(e.StackTrace);
+
                 resultModel.success = false;
                 resultModel.info = e.Message;
                 return JsonConvert.SerializeObject(resultModel);
@@ -243,6 +247,8 @@ namespace Server.Controllers
             }
             catch (Exception e)
             {
+                logger.LogError(e.StackTrace);
+
                 resultModel.success = false;
                 resultModel.info = e.Message;
                 return JsonConvert.SerializeObject(resultModel);
@@ -272,6 +278,8 @@ namespace Server.Controllers
             }
             catch (Exception e)
             {
+                logger.LogError(e.StackTrace);
+
                 resultModel.success = false;
                 resultModel.info = e.Message;
                 return JsonConvert.SerializeObject(resultModel);
