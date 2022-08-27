@@ -166,7 +166,7 @@ namespace Server.Controllers
                 {
                     if (collector.GetStartPageIndex(paragraph) == pageIndex && paragraph.GetAncestor(NodeType.GroupShape) == null)
                     {
-                        crossSealPath = saveDir + "/" + pageIndex + ".png";
+                        crossSealPath = Path.Combine(saveDir, pageIndex + ".png");
                         image = SystemUtil.ResizeImage(listImage[pageIndex - 1], width, height);
                         image.Save(crossSealPath);
 
@@ -184,13 +184,13 @@ namespace Server.Controllers
 
                         pageIndex++;
                     }
-
-                    report.sealtime = dateTime;
-
-                    document.Save(docPath);
-
-                    context.SaveChanges();
                 }
+
+                report.sealtime = dateTime;
+
+                document.Save(docPath);
+
+                context.SaveChanges();
 
                 resultModel.success = true;
                 resultModel.info = "批量签章成功";
