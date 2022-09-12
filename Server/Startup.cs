@@ -36,7 +36,7 @@ namespace Server
                                   });
             });
 
-            services.AddControllersWithViews();
+            services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,17 +46,10 @@ namespace Server
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-            }
-            app.UseStaticFiles();
 
             app.UseRouting();
 
             app.UseCors(Cors);
-
-            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
