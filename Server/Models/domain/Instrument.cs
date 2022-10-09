@@ -16,6 +16,7 @@ namespace Server.Models.Domain
         public string measuringrange { get; set; }
         public string uncertainty { get; set; }
         public string accuracyclass { get; set; }
+        public string mpe { get; set; }
         public decimal? price { get; set; }
         public int? tracetypeid { get; set; }
         public int? tracecycle { get; set; }
