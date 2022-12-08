@@ -1,5 +1,5 @@
-﻿using Aspose.Words;
-using Aspose.Words.Layout;
+﻿using Aspose.Pdf;
+using Aspose.Words;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +10,6 @@ using Ruibu.Core.Library.Model;
 using Server.Models.Domain;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 
@@ -55,7 +54,7 @@ namespace Server.Controllers
 
                 DateTime dateTime = DateTime.Now;
                 string docPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
-                Document document = new Document(docPath);
+                Aspose.Words.Document document = new Aspose.Words.Document(docPath);
                 Aspose.Words.Drawing.Shape shape;
                 foreach (Node node in document.GetChildNodes(NodeType.Shape, true))
                 {
@@ -125,14 +124,11 @@ namespace Server.Controllers
 
                 DateTime dateTime = DateTime.Now;
                 string docPath;
-                Document document;
-                NodeCollection paragraphs;
-                LayoutCollector collector;
-                Paragraph anchorPara;
+                Aspose.Words.Document document;
                 Aspose.Words.Drawing.Shape shapeSeal;
 
                 docPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
-                document = new Document(docPath);
+                document = new Aspose.Words.Document(docPath);
 
                 foreach (Node node in document.GetChildNodes(NodeType.Shape, true))
                 {
@@ -145,12 +141,19 @@ namespace Server.Controllers
                     }
                 }
 
+
+                document.Save(docPath);
+
                 // 添加骑缝章
+                string pdfPath = docPath.Replace("docx", "pdf");
+                document.Save(pdfPath, Aspose.Words.SaveFormat.Pdf);
+
+                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(pdfPath);
+                int pageCount = pdfDocument.Pages.Count;
                 string sealSmallPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/检测专用章small.png");
-                paragraphs = document.GetChildNodes(NodeType.Paragraph, true);
-                collector = new LayoutCollector(document);
-                int pageCount = document.PageCount;
-                List<Image> listImage = SystemUtil.SplitImage(sealSmallPath, pageCount);
+                string crossSealPath;
+                List<System.Drawing.Image> listImage = SystemUtil.SplitImage(sealSmallPath, pageCount);
+                System.Drawing.Image image;
                 string saveDir = Path.Combine(configuration["FileServerAbsolutePath"], "Report", report.id.ToString());
 
                 if (Directory.Exists(saveDir))
@@ -160,37 +163,46 @@ namespace Server.Controllers
 
                 Directory.CreateDirectory(saveDir);
 
-                string crossSealPath;
-                Aspose.Words.Drawing.Shape shapeCrossSeal;
-                int pageIndex = 1;
-                Image image;
-                foreach (Paragraph paragraph in paragraphs)
+                int lowerLeftX;
+                int lowerLeftY;
+                int upperRightX;
+                int upperRightY;
+
+                Aspose.Pdf.Rectangle rectangle;
+                Aspose.Pdf.Matrix matrix;
+                XImage ximage;
+                FileStream imageStream;
+                int pageIndex;
+                foreach (Page page in pdfDocument.Pages)
                 {
-                    if (collector.GetStartPageIndex(paragraph) == pageIndex && paragraph.GetAncestor(NodeType.GroupShape) == null)
-                    {
-                        crossSealPath = Path.Combine(saveDir, pageIndex + ".png");
-                        image = listImage[pageIndex - 1];
-                        image.Save(crossSealPath);
+                    pageIndex = pdfDocument.Pages.IndexOf(page);
+                    crossSealPath = saveDir + "/" + pageIndex + ".png";
+                    image = listImage[pageIndex - 1];
+                    image.Save(crossSealPath);
+                    imageStream = new FileStream(crossSealPath, FileMode.Open);
+                    page.Resources.Images.Add(imageStream);
+                    page.Contents.Add(new Aspose.Pdf.Operators.GSave());
 
-                        anchorPara = paragraph;
+                    lowerLeftX = (int)(page.PageInfo.Width) - image.Width;
+                    lowerLeftY = (int)(page.PageInfo.Height / 2) - image.Height / 2;
+                    upperRightX = (int)page.PageInfo.Width;
+                    upperRightY = (int)(page.PageInfo.Height / 2) + image.Height / 2;
 
-                        shapeCrossSeal = new Aspose.Words.Drawing.Shape(document, Aspose.Words.Drawing.ShapeType.Image);
-                        shapeCrossSeal.Left = 500;
-                        shapeCrossSeal.Top = 50;
+                    rectangle = new Aspose.Pdf.Rectangle(lowerLeftX, lowerLeftY, upperRightX, upperRightY);
+                    matrix = new Aspose.Pdf.Matrix(new double[] { rectangle.URX - rectangle.LLX, 0, 0, rectangle.URY - rectangle.LLY, rectangle.LLX, rectangle.LLY });
+                    // Using ConcatenateMatrix (concatenate matrix) operator: defines how image must be placed
+                    page.Contents.Add(new Aspose.Pdf.Operators.ConcatenateMatrix(matrix));
 
-                        shapeCrossSeal.ImageData.SetImage(crossSealPath);
-
-                        shapeCrossSeal.WrapType = Aspose.Words.Drawing.WrapType.None;
-                        shapeCrossSeal.AlternativeText = "骑缝章";
-                        anchorPara.AppendChild(shapeCrossSeal);
-
-                        pageIndex++;
-                    }
+                    ximage = page.Resources.Images[page.Resources.Images.Count];
+                    // Using Do operator: this operator draws image
+                    page.Contents.Add(new Aspose.Pdf.Operators.Do(ximage.Name));
+                    // Using GRestore operator: this operator restores graphics state
+                    page.Contents.Add(new Aspose.Pdf.Operators.GRestore());
                 }
 
-                report.sealtime = dateTime;
+                pdfDocument.Save(docPath, Aspose.Pdf.SaveFormat.DocX);
 
-                document.Save(docPath);
+                report.sealtime = dateTime;
 
                 context.SaveChanges();
 
@@ -227,7 +239,7 @@ namespace Server.Controllers
 
                 string docPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
                 DateTime dateTime = DateTime.Now;
-                Document document = new Document(docPath);
+                Aspose.Words.Document document = new Aspose.Words.Document(docPath);
 
                 string tempPath = Path.Combine(configuration["FileServerAbsolutePath"], "Temp", dateTime.Year.ToString());
                 if (!Directory.Exists(tempPath))
@@ -239,7 +251,7 @@ namespace Server.Controllers
                 string relativePath = "Temp/" + dateTime.Year.ToString() + "/" + saveName + ".pdf";
                 string absolutePath = Path.Combine(tempPath, saveName + ".pdf");
 
-                document.Save(absolutePath, SaveFormat.Pdf);
+                document.Save(absolutePath, Aspose.Words.SaveFormat.Pdf);
 
                 resultModel.success = true;
                 resultModel.model = configuration["FileServerPath"] + relativePath;

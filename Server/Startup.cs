@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Renci.SshNet;
 using Server.Models.Domain;
 
 namespace Server
@@ -45,6 +46,14 @@ namespace Server
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+
+                PrivateKeyFile privateKeyFile = new PrivateKeyFile(@"D:\WeiYun\Cloud\Aliyun\ruibu.pem");
+                using (SshClient client = new SshClient("47.96.41.13", 22, "root", privateKeyFile))
+                {
+                    client.Connect();
+                    ForwardedPortLocal forwardedPortLocal = new ForwardedPortLocal(5433, "localhost", 5432);
+                    client.AddForwardedPort(forwardedPortLocal);
+                }
             }
 
             app.UseRouting();
