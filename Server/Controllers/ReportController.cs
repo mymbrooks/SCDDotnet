@@ -1,5 +1,4 @@
 ﻿using Aspose.Pdf;
-using Aspose.Words;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -37,51 +36,51 @@ namespace Server.Controllers
 
             try
             {
-                Report report = (from r in context.Reports
-                                 where r.projectid == projectid
-                                 select r).FirstOrDefault();
+                //Report report = (from r in context.Reports
+                //                 where r.projectid == projectid
+                //                 select r).FirstOrDefault();
 
-                if (report == null || string.IsNullOrEmpty(report.fileurl))
-                {
-                    resultModel.success = false;
-                    resultModel.info = "请先上传报告";
-                    return JsonConvert.SerializeObject(resultModel);
-                }
+                //if (report == null || string.IsNullOrEmpty(report.fileurl))
+                //{
+                //    resultModel.success = false;
+                //    resultModel.info = "请先上传报告";
+                //    return JsonConvert.SerializeObject(resultModel);
+                //}
 
-                string compileSignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/zhangzeliang.png");
-                string verifySignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/suzhiwei.png");
-                string signSignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/suntao.png");
+                //string compileSignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/zhangzeliang.png");
+                //string verifySignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/suzhiwei.png");
+                //string signSignPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/suntao.png");
 
-                DateTime dateTime = DateTime.Now;
-                string docPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
-                Aspose.Words.Document document = new Aspose.Words.Document(docPath);
-                Aspose.Words.Drawing.Shape shape;
-                foreach (Node node in document.GetChildNodes(NodeType.Shape, true))
-                {
-                    shape = (Aspose.Words.Drawing.Shape)node;
+                //DateTime dateTime = DateTime.Now;
+                //string docPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
+                //Aspose.Words.Document document = new Aspose.Words.Document(docPath);
+                //Aspose.Words.Drawing.Shape shape;
+                //foreach (Node node in document.GetChildNodes(NodeType.Shape, true))
+                //{
+                //    shape = (Aspose.Words.Drawing.Shape)node;
 
-                    if (shape.AlternativeText == "编制")
-                    {
-                        shape.ImageData.SetImage(compileSignPath);
-                        report.compiletime = dateTime;
-                    }
+                //    if (shape.AlternativeText == "编制")
+                //    {
+                //        shape.ImageData.SetImage(compileSignPath);
+                //        report.compiletime = dateTime;
+                //    }
 
-                    if (shape.AlternativeText == "审核")
-                    {
-                        shape.ImageData.SetImage(verifySignPath);
-                        report.verifytime = dateTime;
-                    }
+                //    if (shape.AlternativeText == "审核")
+                //    {
+                //        shape.ImageData.SetImage(verifySignPath);
+                //        report.verifytime = dateTime;
+                //    }
 
-                    if (shape.AlternativeText == "签发")
-                    {
-                        shape.ImageData.SetImage(signSignPath);
-                        report.signtime = dateTime;
-                    }
-                }
+                //    if (shape.AlternativeText == "签发")
+                //    {
+                //        shape.ImageData.SetImage(signSignPath);
+                //        report.signtime = dateTime;
+                //    }
+                //}
 
-                document.Save(docPath);
+                //document.Save(docPath);
 
-                context.SaveChanges();
+                //context.SaveChanges();
 
                 resultModel.success = true;
                 resultModel.info = "批量签名成功";
@@ -123,30 +122,29 @@ namespace Server.Controllers
                 }
 
                 DateTime dateTime = DateTime.Now;
-                string docPath;
-                Aspose.Words.Document document;
-                Aspose.Words.Drawing.Shape shapeSeal;
+                //string pdfPath;
+                //Aspose.Words.Document document;
+                //Aspose.Words.Drawing.Shape shapeSeal;
 
-                docPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
-                document = new Aspose.Words.Document(docPath);
+                //pdfPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
+                //document = new Aspose.Words.Document(pdfPath);
 
-                foreach (Node node in document.GetChildNodes(NodeType.Shape, true))
-                {
-                    shapeSeal = (Aspose.Words.Drawing.Shape)node;
+                //foreach (Node node in document.GetChildNodes(NodeType.Shape, true))
+                //{
+                //    shapeSeal = (Aspose.Words.Drawing.Shape)node;
 
-                    if (shapeSeal.AlternativeText == "签章")
-                    {
-                        // 添加普通章
-                        shapeSeal.ImageData.SetImage(sealLargePath);
-                    }
-                }
+                //    if (shapeSeal.AlternativeText == "签章")
+                //    {
+                //        // 添加普通章
+                //        shapeSeal.ImageData.SetImage(sealLargePath);
+                //    }
+                //}
 
 
-                document.Save(docPath);
+                //document.Save(pdfPath);
 
                 // 添加骑缝章
-                string pdfPath = docPath.Replace("docx", "pdf");
-                document.Save(pdfPath, Aspose.Words.SaveFormat.Pdf);
+                string pdfPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
 
                 Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(pdfPath);
                 int pageCount = pdfDocument.Pages.Count;
@@ -200,7 +198,7 @@ namespace Server.Controllers
                     page.Contents.Add(new Aspose.Pdf.Operators.GRestore());
                 }
 
-                pdfDocument.Save(docPath, Aspose.Pdf.SaveFormat.DocX);
+                pdfDocument.Save(pdfPath);
 
                 report.sealtime = dateTime;
 
@@ -237,24 +235,8 @@ namespace Server.Controllers
                     return JsonConvert.SerializeObject(resultModel);
                 }
 
-                string docPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
-                DateTime dateTime = DateTime.Now;
-                Aspose.Words.Document document = new Aspose.Words.Document(docPath);
-
-                string tempPath = Path.Combine(configuration["FileServerAbsolutePath"], "Temp", dateTime.Year.ToString());
-                if (!Directory.Exists(tempPath))
-                {
-                    Directory.CreateDirectory(tempPath);
-                }
-
-                string saveName = report.number;
-                string relativePath = "Temp/" + dateTime.Year.ToString() + "/" + saveName + ".pdf";
-                string absolutePath = Path.Combine(tempPath, saveName + ".pdf");
-
-                document.Save(absolutePath, Aspose.Words.SaveFormat.Pdf);
-
                 resultModel.success = true;
-                resultModel.model = configuration["FileServerPath"] + relativePath;
+                resultModel.model = configuration["FileServerPath"] + report.fileurl;
                 return JsonConvert.SerializeObject(resultModel);
             }
             catch (Exception e)
