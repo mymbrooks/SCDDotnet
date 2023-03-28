@@ -122,31 +122,26 @@ namespace Server.Controllers
                 }
 
                 DateTime dateTime = DateTime.Now;
-                //string pdfPath;
-                //Aspose.Words.Document document;
-                //Aspose.Words.Drawing.Shape shapeSeal;
 
-                //pdfPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
-                //document = new Aspose.Words.Document(pdfPath);
-
-                //foreach (Node node in document.GetChildNodes(NodeType.Shape, true))
-                //{
-                //    shapeSeal = (Aspose.Words.Drawing.Shape)node;
-
-                //    if (shapeSeal.AlternativeText == "签章")
-                //    {
-                //        // 添加普通章
-                //        shapeSeal.ImageData.SetImage(sealLargePath);
-                //    }
-                //}
-
-
-                //document.Save(pdfPath);
-
-                // 添加骑缝章
                 string pdfPath = Path.Combine(configuration["FileServerAbsolutePath"], report.fileurl);
 
                 Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(pdfPath);
+
+                // 添加常规章 首页
+                string sealBigPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/检测专用章.png");
+
+                if (pdfDocument.Pages[1].Resources.Images.Count > 1)
+                {
+                    pdfDocument.Pages[1].Resources.Images.Replace(2, new FileStream(sealBigPath, FileMode.Open));
+                }
+
+                // 添加常规章 第三页
+                if (pdfDocument.Pages[3].Resources.Images.Count > 0)
+                {
+                    pdfDocument.Pages[3].Resources.Images.Replace(1, new FileStream(sealBigPath, FileMode.Open));
+                }
+
+                // 添加骑缝章
                 int pageCount = pdfDocument.Pages.Count;
                 string sealSmallPath = Path.Combine(webHostEnvironment.ContentRootPath, "Resources/检测专用章small.png");
                 string crossSealPath;
