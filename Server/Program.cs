@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using System;
 
 namespace Server
 {
@@ -7,6 +8,9 @@ namespace Server
     {
         public static void Main(string[] args)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+            AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", true);
+
             Aspose.Words.License licenseWords = new Aspose.Words.License();
             licenseWords.SetLicense("./Libs/License.txt");
 
