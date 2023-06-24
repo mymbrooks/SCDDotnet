@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -47,7 +48,22 @@ namespace Server
             {
                 app.UseDeveloperExceptionPage();
 
-                PrivateKeyFile privateKeyFile = new PrivateKeyFile(@"D:\WeiYun\Cloud\Aliyun\ruibu.pem");
+                string platform = Environment.OSVersion.Platform.ToString(), privateKey;
+
+                if (platform == "Windows")
+                {
+                    privateKey = @"D:\WeiYun\Cloud\Aliyun\ruibu.pem";
+                }
+                else if (platform == "Unix")
+                {
+                    privateKey = "/Users/brooks/WeiYun/Cloud/Aliyun/ruibu.pem";
+                }
+                else
+                {
+                    privateKey = "/Users/brooks/WeiYun/Cloud/Aliyun/ruibu.pem";
+                }
+
+                PrivateKeyFile privateKeyFile = new PrivateKeyFile(privateKey);
                 using (SshClient client = new SshClient("47.96.41.13", 22, "root", privateKeyFile))
                 {
                     client.Connect();
